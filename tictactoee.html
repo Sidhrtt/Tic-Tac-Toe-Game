@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic-Tac-Toe — Scorepad</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --shell: #16213E;
+    --shell-deep: #0D1526;
+    --paper: #F5F1E3;
+    --paper-line: #C9C2AA;
+    --ink: #2B3A55;
+    --x-ink: #C9483C;
+    --o-ink: #2E7D6B;
+    --amber: #E8B93F;
+    --text-soft: #B9C2D8;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(ellipse at top, #1D2C52 0%, var(--shell) 45%, var(--shell-deep) 100%);
+    font-family: 'Space Mono', monospace;
+    color: var(--text-soft);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .console {
+    width: 100%;
+    max-width: 460px;
+    background: linear-gradient(180deg, #1B2A4D 0%, #131E38 100%);
+    border-radius: 22px;
+    padding: 22px 22px 26px;
+    box-shadow:
+      0 30px 60px rgba(0,0,0,0.5),
+      inset 0 1px 0 rgba(255,255,255,0.06),
+      inset 0 0 0 1px rgba(255,255,255,0.03);
+    position: relative;
+  }
+
+  .console::before {
+    content: "";
+    position: absolute;
+    top: 10px; left: 50%;
+    transform: translateX(-50%);
+    width: 46px; height: 5px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.08);
+  }
+
+  header {
+    text-align: center;
+    margin: 14px 0 16px;
+  }
+
+  h1 {
+    font-family: 'Kalam', cursive;
+    font-weight: 700;
+    font-size: 2.1rem;
+    margin: 0;
+    color: #F1EEDD;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.25);
+  }
+
+  .subtitle {
+    font-size: 0.68rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #7A8BB0;
+    margin-top: 4px;
+  }
+
+  /* Mode / difficulty selectors */
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .seg {
+    display: flex;
+    background: rgba(0,0,0,0.25);
+    border-radius: 10px;
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .seg button {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: #8C9BC2;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    padding: 9px 6px;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  .seg button.active {
+    background: var(--amber);
+    color: #23180A;
+    font-weight: 700;
+  }
+
+  .seg button:not(.active):hover {
+    background: rgba(255,255,255,0.06);
+    color: #DDE4F3;
+  }
+
+  /* Scoreboard */
+  .scoreboard {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .score-cell {
+    background: var(--shell-deep);
+    border-radius: 10px;
+    padding: 8px 4px 10px;
+    text-align: center;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+  }
+
+  .score-cell .label {
+    font-size: 0.62rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #6E7EA3;
+    margin-bottom: 4px;
+  }
+
+  .score-cell .value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .score-cell.x .value { color: var(--x-ink); }
+  .score-cell.o .value { color: var(--o-ink); }
+  .score-cell.d .value { color: #C7CEE0; }
+
+  /* Status strip */
+  .status {
+    text-align: center;
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    font-family: 'Kalam', cursive;
+    font-size: 1.15rem;
+    color: #F1EEDD;
+  }
+
+  .status .turn-mark {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-right: 8px;
+    box-shadow: 0 0 8px currentColor;
+  }
+
+  /* Paper board */
+  .paper-wrap {
+    background: var(--paper);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow:
+      0 10px 24px rgba(0,0,0,0.35),
+      inset 0 0 0 1px rgba(0,0,0,0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .paper-wrap::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(43,58,85,0.06) 0 1px, transparent 1px 22px),
+      repeating-linear-gradient(90deg, rgba(43,58,85,0.06) 0 1px, transparent 1px 22px);
+    pointer-events: none;
+  }
+
+  .board {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-width: 340px;
+    margin: 0 auto;
+  }
+
+  .board svg.grid-lines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  .cell {
+    position: relative;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .cell:disabled { cursor: default; }
+
+  .cell svg {
+    width: 58%;
+    height: 58%;
+    overflow: visible;
+  }
+
+  .cell .stroke {
+    fill: none;
+    stroke-width: 9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 300;
+    stroke-dashoffset: 300;
+    animation: draw 0.32s ease-out forwards;
+  }
+
+  @keyframes draw {
+    to { stroke-dashoffset: 0; }
+  }
+
+  .cell.win svg .stroke {
+    filter: drop-shadow(0 0 6px currentColor);
+  }
+
+  .cell:not(:disabled):hover {
+    background: rgba(43,58,85,0.05);
+  }
+
+  .win-line {
+    stroke: var(--amber);
+    stroke-width: 6;
+    stroke-linecap: round;
+    fill: none;
+    stroke-dasharray: 400;
+    stroke-dashoffset: 400;
+    animation: draw-line 0.4s ease-out forwards;
+    filter: drop-shadow(0 0 6px var(--amber));
+  }
+
+  @keyframes draw-line {
+    to { stroke-dashoffset: 0; }
+  }
+
+  /* Footer actions */
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .btn {
+    flex: 1;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.78rem;
+    letter-spacing: 0.5px;
+    font-weight: 700;
+    padding: 12px 8px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s, filter 0.15s;
+  }
+
+  .btn:active { transform: scale(0.97); }
+
+  .btn.primary {
+    background: var(--amber);
+    color: #23180A;
+  }
+
+  .btn.primary:hover { filter: brightness(1.08); }
+
+  .btn.ghost {
+    background: rgba(255,255,255,0.06);
+    color: #C7CEE0;
+  }
+
+  .btn.ghost:hover { background: rgba(255,255,255,0.1); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cell .stroke, .win-line { animation: none; stroke-dashoffset: 0; }
+  }
+
+  .cell:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: -2px;
+    border-radius: 6px;
+  }
+
+  .seg button:focus-visible, .btn:focus-visible {
+    outline: 2px solid var(--amber);
+    outline-offset: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="console">
+  <header>
+    <h1>Tic-Tac-Toe</h1>
+    <div class="subtitle">the scorepad edition</div>
+  </header>
+
+  <div class="controls">
+    <div class="seg" id="modeSeg">
+      <button data-mode="pvp" class="active">2 Players</button>
+      <button data-mode="pvc">Vs Computer</button>
+    </div>
+    <div class="seg" id="diffSeg" style="display:none;">
+      <button data-diff="easy" class="active">Easy</button>
+      <button data-diff="hard">Unbeatable</button>
+    </div>
+  </div>
+
+  <div class="scoreboard">
+    <div class="score-cell x">
+      <div class="label">Player X</div>
+      <div class="value" id="scoreX">0</div>
+    </div>
+    <div class="score-cell d">
+      <div class="label">Draws</div>
+      <div class="value" id="scoreD">0</div>
+    </div>
+    <div class="score-cell o">
+      <div class="label" id="labelO">Player O</div>
+      <div class="value" id="scoreO">0</div>
+    </div>
+  </div>
+
+  <div class="status" id="status"></div>
+
+  <div class="paper-wrap">
+    <div class="board" id="board">
+      <svg class="grid-lines" viewBox="0 0 300 300" preserveAspectRatio="none">
+        <path d="M 101 12 C 99 90, 103 200, 100 288" stroke="#2B3A55" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.75"/>
+        <path d="M 200 10 C 202 100, 198 190, 201 290" stroke="#2B3A55" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.75"/>
+        <path d="M 10 100 C 90 98, 200 103, 290 99" stroke="#2B3A55" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.75"/>
+        <path d="M 12 200 C 100 202, 190 197, 288 201" stroke="#2B3A55" stroke-width="4" stroke-linecap="round" fill="none" opacity="0.75"/>
+        <g id="winLineGroup"></g>
+      </svg>
+      <!-- 9 cell buttons injected by JS -->
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn primary" id="newRound">New Round</button>
+    <button class="btn ghost" id="resetScores">Reset Scores</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const boardEl = document.getElementById('board');
+  const statusEl = document.getElementById('status');
+  const modeSeg = document.getElementById('modeSeg');
+  const diffSeg = document.getElementById('diffSeg');
+  const scoreXEl = document.getElementById('scoreX');
+  const scoreOEl = document.getElementById('scoreO');
+  const scoreDEl = document.getElementById('scoreD');
+  const labelOEl = document.getElementById('labelO');
+  const winLineGroup = document.getElementById('winLineGroup');
+  const newRoundBtn = document.getElementById('newRound');
+  const resetScoresBtn = document.getElementById('resetScores');
+
+  let cells = Array(9).fill(null);
+  let current = 'X';
+  let gameOver = false;
+  let mode = 'pvp';       // 'pvp' | 'pvc'
+  let difficulty = 'easy'; // 'easy' | 'hard'
+  let scores = { X: 0, O: 0, D: 0 };
+  let cellButtons = [];
+
+  const WIN_LINES = [
+    [0,1,2],[3,4,5],[6,7,8],
+    [0,3,6],[1,4,7],[2,5,8],
+    [0,4,8],[2,4,6]
+  ];
+
+  // Coordinates of each cell's center in the 300x300 grid viewBox
+  const CELL_CENTERS = [
+    [50,50],[150,50],[250,50],
+    [50,150],[150,150],[250,150],
+    [50,250],[150,250],[250,250]
+  ];
+
+  function buildBoard() {
+    boardEl.querySelectorAll('.cell').forEach(el => el.remove());
+    cellButtons = [];
+    for (let i = 0; i < 9; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'cell';
+      btn.setAttribute('data-index', i);
+      btn.setAttribute('aria-label', 'Cell ' + (i + 1));
+      btn.addEventListener('click', () => handleCellClick(i));
+      boardEl.appendChild(btn);
+      cellButtons.push(btn);
+    }
+  }
+
+  function markSVG(mark) {
+    if (mark === 'X') {
+      return `<svg viewBox="0 0 100 100">
+        <path class="stroke" d="M20,20 L80,80" style="stroke:var(--x-ink)"/>
+        <path class="stroke" d="M80,20 L20,80" style="stroke:var(--x-ink); animation-delay:0.12s;"/>
+      </svg>`;
+    }
+    return `<svg viewBox="0 0 100 100">
+      <circle class="stroke" cx="50" cy="50" r="32" style="stroke:var(--o-ink)"/>
+    </svg>`;
+  }
+
+  function render() {
+    cells.forEach((val, i) => {
+      const btn = cellButtons[i];
+      btn.innerHTML = val ? markSVG(val) : '';
+      btn.disabled = !!val || gameOver;
+      btn.classList.remove('win');
+    });
+    scoreXEl.textContent = scores.X;
+    scoreOEl.textContent = scores.O;
+    scoreDEl.textContent = scores.D;
+    labelOEl.textContent = mode === 'pvc' ? 'Computer' : 'Player O';
+  }
+
+  function setStatus(text, color) {
+    statusEl.innerHTML = `<span class="turn-mark" style="color:${color}; background:${color};"></span>${text}`;
+  }
+
+  function updateStatusForTurn() {
+    if (gameOver) return;
+    const isComputerTurn = mode === 'pvc' && current === 'O';
+    const who = isComputerTurn ? 'Computer' : (mode === 'pvc' ? 'Your' : 'Player ' + current + "'s");
+    const color = current === 'X' ? 'var(--x-ink)' : 'var(--o-ink)';
+    setStatus(`${who} turn`, color);
+  }
+
+  function checkWinner(board) {
+    for (const line of WIN_LINES) {
+      const [a, b, c] = line;
+      if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+        return { winner: board[a], line };
+      }
+    }
+    if (board.every(c => c)) return { winner: 'draw', line: null };
+    return null;
+  }
+
+  function drawWinLine(line) {
+    const [a, , c] = line;
+    const [x1, y1] = CELL_CENTERS[a];
+    const [x2, y2] = CELL_CENTERS[c];
+    winLineGroup.innerHTML = `<path class="win-line" d="M ${x1} ${y1} L ${x2} ${y2}" />`;
+  }
+
+  function endRound(result) {
+    gameOver = true;
+    cellButtons.forEach(b => b.disabled = true);
+    if (result.winner === 'draw') {
+      scores.D++;
+      setStatus("It's a draw", '#C7CEE0');
+    } else {
+      result.line.forEach(i => cellButtons[i].classList.add('win'));
+      drawWinLine(result.line);
+      scores[result.winner]++;
+      const who = mode === 'pvc' && result.winner === 'O' ? 'Computer' : 'Player ' + result.winner;
+      const color = result.winner === 'X' ? 'var(--x-ink)' : 'var(--o-ink)';
+      setStatus(`${who} wins!`, color);
+    }
+    render();
+  }
+
+  function handleCellClick(i) {
+    if (gameOver || cells[i]) return;
+    if (mode === 'pvc' && current === 'O') return; // block clicks during computer's turn
+    placeMark(i);
+  }
+
+  function placeMark(i) {
+    cells[i] = current;
+    const result = checkWinner(cells);
+    render();
+    if (result) {
+      endRound(result);
+      return;
+    }
+    current = current === 'X' ? 'O' : 'X';
+    updateStatusForTurn();
+    if (mode === 'pvc' && current === 'O' && !gameOver) {
+      cellButtons.forEach(b => { if (!cells[b.getAttribute('data-index')]) b.disabled = true; });
+      setTimeout(computerMove, 480);
+    }
+  }
+
+  function computerMove() {
+    if (gameOver) return;
+    let move;
+    if (difficulty === 'hard') {
+      move = bestMove(cells);
+    } else {
+      const empties = cells.map((v, i) => v ? null : i).filter(v => v !== null);
+      move = empties[Math.floor(Math.random() * empties.length)];
+    }
+    if (move !== undefined && move !== null) placeMark(move);
+  }
+
+  // Minimax for unbeatable computer (O maximizes, X minimizes)
+  function bestMove(board) {
+    let best = { score: -Infinity, index: null };
+    for (let i = 0; i < 9; i++) {
+      if (!board[i]) {
+        board[i] = 'O';
+        const score = minimax(board, 0, false);
+        board[i] = null;
+        if (score > best.score) best = { score, index: i };
+      }
+    }
+    return best.index;
+  }
+
+  function minimax(board, depth, isMaximizing) {
+    const result = checkWinner(board);
+    if (result) {
+      if (result.winner === 'O') return 10 - depth;
+      if (result.winner === 'X') return depth - 10;
+      return 0;
+    }
+    if (isMaximizing) {
+      let best = -Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (!board[i]) {
+          board[i] = 'O';
+          best = Math.max(best, minimax(board, depth + 1, false));
+          board[i] = null;
+        }
+      }
+      return best;
+    } else {
+      let best = Infinity;
+      for (let i = 0; i < 9; i++) {
+        if (!board[i]) {
+          board[i] = 'X';
+          best = Math.min(best, minimax(board, depth + 1, true));
+          board[i] = null;
+        }
+      }
+      return best;
+    }
+  }
+
+  function newRound() {
+    cells = Array(9).fill(null);
+    current = 'X';
+    gameOver = false;
+    winLineGroup.innerHTML = '';
+    buildBoard();
+    render();
+    updateStatusForTurn();
+  }
+
+  function resetScores() {
+    scores = { X: 0, O: 0, D: 0 };
+    newRound();
+  }
+
+  modeSeg.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    mode = btn.getAttribute('data-mode');
+    [...modeSeg.children].forEach(b => b.classList.toggle('active', b === btn));
+    diffSeg.style.display = mode === 'pvc' ? 'flex' : 'none';
+    newRound();
+  });
+
+  diffSeg.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-diff]');
+    if (!btn) return;
+    difficulty = btn.getAttribute('data-diff');
+    [...diffSeg.children].forEach(b => b.classList.toggle('active', b === btn));
+    newRound();
+  });
+
+  newRoundBtn.addEventListener('click', newRound);
+  resetScoresBtn.addEventListener('click', resetScores);
+
+  buildBoard();
+  render();
+  updateStatusForTurn();
+})();
+</script>
+
+</body>
+</html>
